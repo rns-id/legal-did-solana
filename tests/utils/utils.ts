@@ -125,10 +125,6 @@ export const getCollectionMasterEditionAddress = async (
 //   ),
 // )
 
-// export const USER_WALLET = Keypair.fromSecretKey(
-//   bs58.decode("5tNwYQUBXH4YgNqiAhkJT7nuEWjr7v2UMT5Di5W8wrWCPi35qpoKsxPkB2NtjWKC1ALSutgdTLSMzK5DKcWeWsCg")
-// );
-
 /* Find the associated token account between mint*/
 export const getTokenWallet = async (
   wallet: web3.PublicKey,
