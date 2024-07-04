@@ -1,19 +1,19 @@
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::sysvar::rent::Rent;
-use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
-use mpl_bubblegum::state::metaplex_anchor::MplTokenMetadata;
-use mpl_token_metadata::state::DataV2;
-use shared_utils::{
+use crate::utils::{
   create_master_edition_v3,
   create_metadata_accounts_v3,
   CreateMasterEditionV3,
   CreateMetadataAccountsV3,
 };
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::sysvar::rent::Rent;
+use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
+use mpl_bubblegum::state::metaplex_anchor::MplTokenMetadata;
+use mpl_token_metadata::state::DataV2;
 
 use crate::state::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
-pub struct InitializeNonTransferableProjectArgs {
+pub struct InitializeArgs {
   pub name: String,
   pub symbol: String,
   pub base_uri: String,
@@ -21,29 +21,29 @@ pub struct InitializeNonTransferableProjectArgs {
 }
 
 #[derive(Accounts)]
-#[instruction(args: InitializeNonTransferableProjectArgs)]
-pub struct InitializeNonTransferableProject<'info> {
+#[instruction(args: InitializeArgs)]
+pub struct Initialize<'info> {
   #[account(mut)]
   pub authority: Signer<'info>,
 
   #[account(
-        init,
-        payer = authority,
-        space = NON_TRANSFERABLE_PROJECT_SIZE,
-        seeds = [NON_TRANSFERABLE_PROJECT_PREFIX.as_ref()],
-        bump
-    )]
+      init,
+      payer = authority,
+      space = NON_TRANSFERABLE_PROJECT_SIZE,
+      seeds = [NON_TRANSFERABLE_PROJECT_PREFIX.as_ref()],
+      bump
+  )]
   pub non_transferable_project: Box<Account<'info, ProjectAccount>>,
 
   #[account(
-        init,
-        payer = authority,
-        seeds = [NON_TRANSFERABLE_PROJECT_MINT_PREFIX.as_ref()],
-        bump,
-        mint::decimals = 0,
-        mint::authority = non_transferable_project,
-        mint::freeze_authority = non_transferable_project
-    )]
+      init,
+      payer = authority,
+      seeds = [NON_TRANSFERABLE_PROJECT_MINT_PREFIX.as_ref()],
+      bump,
+      mint::decimals = 0,
+      mint::authority = non_transferable_project,
+      mint::freeze_authority = non_transferable_project
+  )]
   pub non_transferable_project_mint: Box<Account<'info, Mint>>,
 
   #[account(
@@ -70,8 +70,7 @@ pub struct InitializeNonTransferableProject<'info> {
   pub rent: Sysvar<'info, Rent>,
 }
 
-impl<'info> InitializeNonTransferableProject<'info> {
-
+impl<'info> Initialize<'info> {
   fn create_metadata_accounts_ctx(
     &self,
   ) -> CpiContext<'_, '_, '_, 'info, CreateMetadataAccountsV3<'info>> {
@@ -92,7 +91,9 @@ impl<'info> InitializeNonTransferableProject<'info> {
   ) -> CpiContext<'_, '_, '_, 'info, CreateMasterEditionV3<'info>> {
     let cpi_accounts = CreateMasterEditionV3 {
       metadata: self.non_transferable_project_metadata.to_account_info(),
-      edition: self.non_transferable_project_master_edition.to_account_info(),
+      edition: self
+        .non_transferable_project_master_edition
+        .to_account_info(),
       mint: self.non_transferable_project_mint.to_account_info(),
       mint_authority: self.non_transferable_project.to_account_info(),
       payer: self.authority.to_account_info(),
@@ -112,14 +113,9 @@ impl<'info> InitializeNonTransferableProject<'info> {
     };
     CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
   }
-
 }
 
-pub fn handler(
-  ctx: Context<InitializeNonTransferableProject>,
-  args: InitializeNonTransferableProjectArgs,
-) -> Result<()> {
-
+pub fn handler(ctx: Context<Initialize>, args: InitializeArgs) -> Result<()> {
   let non_transferable_project = &mut ctx.accounts.non_transferable_project;
 
   non_transferable_project.mint_price = 100;
@@ -141,7 +137,8 @@ pub fn handler(
   ];
 
   token::mint_to(
-    ctx.accounts
+    ctx
+      .accounts
       .mint_to_ctx()
       .with_signer(&[&project_signer_seeds[..]]),
     1,

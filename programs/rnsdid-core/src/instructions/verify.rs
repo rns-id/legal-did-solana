@@ -1,11 +1,11 @@
+use crate::utils::{
+  create_metadata_accounts_v3, verify_collection, CreateMetadataAccountsV3, VerifyCollection,
+};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::sysvar::rent::Rent;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use mpl_bubblegum::state::metaplex_anchor::MplTokenMetadata;
-use shared_utils::{
-  create_metadata_accounts_v3, verify_collection, CreateMetadataAccountsV3, VerifyCollection
-};
 
 use mpl_token_metadata::state::{Collection, Creator, DataV2};
 
@@ -85,7 +85,6 @@ pub struct VerifyContext<'info> {
   )]
   pub non_transferable_user_status: Box<Account<'info, UserStatusAccount>>,
 
-
   #[account(
     init_if_needed,
     payer = authority,
@@ -99,7 +98,6 @@ pub struct VerifyContext<'info> {
     bump
   )]
   pub non_transferable_rns_id_status: Box<Account<'info, RnsIdStatusAccount>>,
-
 
   #[account(
     init_if_needed,
@@ -130,7 +128,6 @@ pub struct VerifyContext<'info> {
 }
 
 impl<'info> VerifyContext<'info> {
-
   fn create_metadata_accounts_ctx(
     &self,
   ) -> CpiContext<'_, '_, '_, 'info, CreateMetadataAccountsV3<'info>> {
@@ -153,32 +150,31 @@ impl<'info> VerifyContext<'info> {
       collection_authority: self.non_transferable_project.to_account_info(),
       collection_mint: self.non_transferable_project_mint.to_account_info(),
       collection_metadata: self.non_transferable_project_metadata.to_account_info(),
-      collection_master_edition: self.non_transferable_project_master_edition.to_account_info(),
+      collection_master_edition: self
+        .non_transferable_project_master_edition
+        .to_account_info(),
     };
     CpiContext::new(
       self.token_metadata_program.to_account_info().clone(),
       cpi_accounts,
     )
   }
-
 }
 
 pub fn handler(
-    ctx: Context<VerifyContext>,
-    rns_id: String,
-    wallet: Pubkey,
-    merkle_root: String,
-    index: String
+  ctx: Context<VerifyContext>,
+  rns_id: String,
+  _wallet: Pubkey,
+  merkle_root: String,
+  _index: String,
 ) -> Result<()> {
-
-    let project_signer_seeds = [
-        NON_TRANSFERABLE_PROJECT_PREFIX.as_bytes(),
-        &[ctx.accounts.non_transferable_project.bump],
-    ];
+  let project_signer_seeds = [
+    NON_TRANSFERABLE_PROJECT_PREFIX.as_bytes(),
+    &[ctx.accounts.non_transferable_project.bump],
+  ];
 
   // Check if the wallet is blacklisted
   let state = &ctx.accounts.non_transferable_project;
-
 
   let creators = vec![
     Creator {
@@ -214,47 +210,43 @@ pub fn handler(
     uses: None,
   };
 
+  create_metadata_accounts_v3(
+    ctx
+      .accounts
+      .create_metadata_accounts_ctx()
+      .with_signer(&[&project_signer_seeds[..]]),
+    data,
+    true,
+    true,
+    None,
+  )?;
 
-    create_metadata_accounts_v3(
-      ctx
-        .accounts
-        .create_metadata_accounts_ctx()
-        .with_signer(&[&project_signer_seeds[..]]),
-      data,
-      true,
-      true,
-      None,
-    )?;
+  msg!("verify_collection");
 
-    msg!("verify_collection");
+  verify_collection(
+    ctx
+      .accounts
+      .verify_collection_ctx()
+      .with_signer(&[&project_signer_seeds[..]]),
+    None,
+  )?;
 
-    verify_collection(
-        ctx
-        .accounts
-        .verify_collection_ctx()
-        .with_signer(&[&project_signer_seeds[..]]),
-        None,
-    )?;
+  let user_status = &mut ctx.accounts.non_transferable_user_status;
+  require!(!user_status.is_minted, ErrorCode::LDIDHasMinted);
 
+  user_status.is_minted = true;
+  user_status.authority = ctx.accounts.user_account.key();
+  user_status.rns_id = rns_id.clone();
 
-    let user_status = &mut ctx.accounts.non_transferable_user_status;
-    require!(!user_status.is_minted, ErrorCode::LDIDHasMinted);
+  let nft_status = &mut ctx.accounts.non_transferable_nft_status;
+  nft_status.authority = ctx.accounts.user_account.key();
+  nft_status.merkle_root = merkle_root.clone();
+  nft_status.rns_id = rns_id.clone();
+  nft_status.mint = ctx.accounts.non_transferable_nft_mint.key();
 
-    user_status.is_minted = true;
-    user_status.authority = ctx.accounts.user_account.key();
-    user_status.rns_id = rns_id.clone();
+  let rns_id_status = &mut ctx.accounts.non_transferable_rns_id_status;
+  rns_id_status.authority = ctx.accounts.authority.key();
+  rns_id_status.num = rns_id_status.num + 1;
 
-    let nft_status = &mut ctx.accounts.non_transferable_nft_status;
-    nft_status.authority = ctx.accounts.user_account.key();
-    nft_status.merkle_root = merkle_root.clone();
-    nft_status.rns_id = rns_id.clone();
-    nft_status.mint = ctx.accounts.non_transferable_nft_mint.key();
-
-
-    let rns_id_status = &mut ctx.accounts.non_transferable_rns_id_status;
-    rns_id_status.authority = ctx.accounts.authority.key();
-    rns_id_status.num = rns_id_status.num + 1;
-
-
-    Ok(())
+  Ok(())
 }

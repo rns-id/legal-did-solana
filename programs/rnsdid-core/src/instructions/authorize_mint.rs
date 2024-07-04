@@ -59,7 +59,7 @@ pub struct AuthorizeMintContext<'info> {
 pub fn handler(
     ctx: Context<AuthorizeMintContext>,
     rns_id: String,
-    wallet: Pubkey
+    _wallet: Pubkey
 ) -> Result<()> {
 
     let amount = ctx.accounts.non_transferable_project.mint_price;
@@ -75,8 +75,6 @@ pub fn handler(
         return err!(ErrorCode::InsufficientBalance);
     }
 
-    // non_transferable_project
-    /* pay fees - transfer money from the payer to the recipient account */
     invoke(
         &system_instruction::transfer(
             &ctx.accounts.authority.key,

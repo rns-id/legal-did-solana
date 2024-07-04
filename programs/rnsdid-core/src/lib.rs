@@ -1,11 +1,9 @@
 use anchor_lang::prelude::*;
 
-use anchor_spl::token::{Mint, Token, TokenAccount};
-
 pub mod error;
 pub mod instructions;
 pub mod state;
-pub mod token_metadata;
+pub mod utils;
 
 use instructions::*;
 use state::*;
@@ -16,14 +14,13 @@ pub mod rnsdid_core {
 
   use super::*;
 
-  pub fn initialize_collection(
-    ctx: Context<InitializeNonTransferableProject>,
-    args: InitializeNonTransferableProjectArgs,
+  pub fn initialize(
+    ctx: Context<Initialize>,
+    args: InitializeArgs,
   ) -> Result<()> {
-    initialize_collection::handler(ctx, args)
+    initialize::handler(ctx, args)
   }
 
-  // only owner actions
   pub fn set_mint_price(ctx: Context<SetMintPriceContext>, mint_price: u64) -> Result<()> {
     let non_transferable_project = &mut ctx.accounts.non_transferable_project;
 
@@ -98,13 +95,8 @@ pub mod rnsdid_core {
   }
 
   pub fn set_merkle_root(ctx: Context<SetMerkleRoot>, rns_id: String, merkle_root: String) -> Result<()> {
-
     let status = &mut ctx.accounts.non_transferable_nft_status;
-
-     // Check if the wallet is blacklisted
      require!(rns_id == status.rns_id, error::ErrorCode::RnsIsNotMatch);
-
-    // status.rns_id = rns_id;
     status.merkle_root = merkle_root;
 
     Ok(())
@@ -125,16 +117,5 @@ pub mod rnsdid_core {
   pub fn burn(ctx: Context<BurnNonTransferableNft>, rns_id: String, wallet: Pubkey) -> Result<()> {
     burn::handler(ctx, rns_id, wallet)
   }
-
-  // pub fn premint(ctx: Context<PremintContext>, token_id: String, wallet: Pubkey) -> Result<()> {
-  //   premint::handler(ctx, token_id, wallet)
-  // }
-
-  // pub fn mint(ctx: Context<FreezeContext>, token_id: String, wallet: Pubkey) -> Result<()> {
-  //   mint::handler(ctx, token_id, wallet)
-  // }
-  // pub fn burn2(ctx: Context<BurnContext>, token_id: String, wallet: Pubkey) -> Result<()> {
-  //   burn2::handler(ctx, token_id, wallet)
-  // }
 
 }

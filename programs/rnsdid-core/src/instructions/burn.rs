@@ -115,7 +115,7 @@ pub struct BurnNonTransferableNft<'info> {
   pub rent: Sysvar<'info, Rent>,
 }
 
-pub fn handler(ctx: Context<BurnNonTransferableNft>, rns_id: String, wallet: Pubkey) -> Result<()> {
+pub fn handler(ctx: Context<BurnNonTransferableNft>, rns_id: String, _wallet: Pubkey) -> Result<()> {
   msg!("start burn ..");
 
   let signer_seeds: &[&[u8]] = &[
@@ -139,8 +139,6 @@ pub fn handler(ctx: Context<BurnNonTransferableNft>, rns_id: String, wallet: Pub
   )?;
 
   msg!("burn_nft");
-
-  // 烧毁NFT
   let cpi_accounts = Burn {
     authority: ctx.accounts.authority.to_account_info().clone(),
     from: ctx.accounts.user_token_account.to_account_info().clone(),
@@ -156,8 +154,6 @@ pub fn handler(ctx: Context<BurnNonTransferableNft>, rns_id: String, wallet: Pub
   let _ctx = CpiContext::new(cpi_program.to_account_info(), cpi_accounts);
 
   let _ = token::burn(_ctx, 1);
-
-
 
   let status = &mut ctx.accounts.non_transferable_nft_status;
   status.merkle_root = String::new();

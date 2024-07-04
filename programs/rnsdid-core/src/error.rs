@@ -23,7 +23,6 @@ pub enum ErrorCode {
     #[msg("The authMint provided is not valid")]
     InvalidAuthMint,
 
-
     // code = 6
     #[msg("One LDID can only mint once to the same wallet.")]
     AlreadyMinted,

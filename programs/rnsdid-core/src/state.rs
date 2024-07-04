@@ -1,22 +1,18 @@
 use anchor_lang::prelude::*;
 use sha2::{Digest, Sha256};
 
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token::Mint;
 
 pub const NON_TRANSFERABLE_PROJECT_PREFIX: &str = "nt-proj-v2";
 pub const NON_TRANSFERABLE_PROJECT_MINT_PREFIX: &str = "nt-project-mint";
 pub const NON_TRANSFERABLE_PROJECT_VAULT_PREFIX: &str = "nt-project-mint-vault";
 
-// pub const NON_TRANSFERABLE_NFT_ESCROW: &str = "nt-nft-mint-esc";
 pub const NON_TRANSFERABLE_NFT_MINT_PREFIX: &str = "nt-nft-mint";
 pub const NON_TRANSFERABLE_NFT_USERSTATUS_PREFIX: &str = "nt-nft-user-status";  // rnsid + wallet
 
 pub const NON_TRANSFERABLE_NFT_STATUS_PREFIX: &str = "nt-nft-status";
 pub const NON_TRANSFERABLE_NFT_RNSID_PREFIX: &str = "nt-nft-rnsid-status";
-
-
 pub const METADATA: &str = "metadata";
-// pub const metadata: &str = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
 
 pub const NON_TRANSFERABLE_PROJECT_SIZE: usize = 8 +
   100 + // name
@@ -24,14 +20,12 @@ pub const NON_TRANSFERABLE_PROJECT_SIZE: usize = 8 +
   100 + // base_uri
   1650 + // is_blocked_address
   1650 + // is_blocked_rns_id
-  // 3650 + // token_id_to_merkle
 
   32 + // admin
   8 +  // mint_price
   32 +  // fee_recipient
   1 + // mint_bump
   1; // bump
-
 
   #[derive(AnchorSerialize, AnchorDeserialize, Clone, Default)]
 pub struct BlockedAddress {
@@ -59,20 +53,14 @@ pub struct ProjectAccount {
   pub fee_recipient: Pubkey,
   pub bump: u8,
   pub mint_bump: u8,
-
-
   pub name: String,
   pub symbol: String,
   pub base_uri: String,
   pub is_blocked_address: Vec<BlockedAddress>,
   pub is_blocked_rns_id: Vec<BlockedRnsID>,
-  // pub token_id_to_merkle: Vec<TokenIdToMerkle>,
 }
 
 impl ProjectAccount {
-  // pub fn contains_token_id(&self, token_id: &str) -> bool {
-  //   self.token_id_to_merkle.iter().any(|pair| pair.key == token_id)
-  // }
   pub fn is_blocked_address(&self, address: Pubkey) -> bool {
     self.is_blocked_address.iter().any(|pair| pair.key == address && pair.value)
   }
@@ -92,7 +80,6 @@ pub struct UserStatusAccount {
   pub is_minted: bool,
   pub is_authorized: bool,
   pub bump: u8,
-
 }
 
 #[account]

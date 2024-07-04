@@ -1,12 +1,12 @@
 
-pub mod initialize_collection;
+pub mod initialize;
 pub mod airdrop;
 pub mod verify;
 
 pub mod burn;
 pub mod authorize_mint;
 
-pub use initialize_collection::*;
+pub use initialize::*;
 pub use airdrop::*;
 pub use verify::*;
 

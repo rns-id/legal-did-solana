@@ -26,5 +26,4 @@ spl-account-compression = { version = "0.1.2", features = ["no-entrypoint", "cpi
 solana-program = "< 1.15"
 proc-macro-crate = "=1.2.1"
 mpl-token-auth-rules = "=1.2.0"
-shared-utils = { path = "../../utils/shared-utils" }
 sha2 = "0.9"
