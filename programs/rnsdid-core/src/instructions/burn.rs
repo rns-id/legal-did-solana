@@ -116,68 +116,60 @@ pub struct BurnNonTransferableNft<'info> {
 }
 
 pub fn handler(ctx: Context<BurnNonTransferableNft>, rns_id: String, _wallet: Pubkey) -> Result<()> {
-  msg!("start burn ..");
+    msg!("start burn ..");
 
-  let signer_seeds: &[&[u8]] = &[
-    NON_TRANSFERABLE_PROJECT_PREFIX.as_bytes(),
-    &[ctx.accounts.non_transferable_project.bump],
-  ];
+    let signer_seeds: &[&[u8]] = &[
+        NON_TRANSFERABLE_PROJECT_PREFIX.as_bytes(),
+        &[ctx.accounts.non_transferable_project.bump],
+    ];
 
-  msg!("thaw_account");
-
+    msg!("thaw_account");
     let cpi_accounts = ThawAccount {
-      account: ctx.accounts.user_token_account.to_account_info(),
-      mint: ctx.accounts.non_transferable_nft_mint.to_account_info(),
-      authority: ctx.accounts.non_transferable_project.to_account_info(),
-  };
+        account: ctx.accounts.user_token_account.to_account_info(),
+        mint: ctx.accounts.non_transferable_nft_mint.to_account_info(),
+        authority: ctx.accounts.non_transferable_project.to_account_info(),
+    };
 
-  let cpi_program = ctx.accounts.token_program.to_account_info();
-  let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
+    let cpi_program = ctx.accounts.token_program.to_account_info();
+    let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
-  token::thaw_account(
-    cpi_ctx.with_signer(&[&signer_seeds[..]]),
-  )?;
+    token::thaw_account(cpi_ctx.with_signer(&[&signer_seeds[..]]))?;
 
-  msg!("burn_nft");
-  let cpi_accounts = Burn {
-    authority: ctx.accounts.authority.to_account_info().clone(),
-    from: ctx.accounts.user_token_account.to_account_info().clone(),
-    mint: ctx
-      .accounts
-      .non_transferable_nft_mint
-      .to_account_info()
-      .clone(),
-  };
+    msg!("burn_nft");
+    let cpi_accounts = Burn {
+        authority: ctx.accounts.authority.to_account_info(),
+        from: ctx.accounts.user_token_account.to_account_info(),
+        mint: ctx.accounts.non_transferable_nft_mint.to_account_info(),
+    };
 
-  let cpi_program = ctx.accounts.token_program.clone();
+    let cpi_program = ctx.accounts.token_program.to_account_info();
+    let burn_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
-  let _ctx = CpiContext::new(cpi_program.to_account_info(), cpi_accounts);
+    token::burn(burn_ctx, 1)?;
 
-  let _ = token::burn(_ctx, 1);
+    // 更新状态
+    let nft_status = &mut ctx.accounts.non_transferable_nft_status;
+    nft_status.merkle_root = String::new();
+    nft_status.rns_id = String::new();
 
-  let status = &mut ctx.accounts.non_transferable_nft_status;
-  status.merkle_root = String::new();
-  status.rns_id = String::new();
+    let user_status = &mut ctx.accounts.non_transferable_user_status;
+    user_status.is_authorized = false;
+    user_status.is_minted = false;
 
-  let status = &mut ctx.accounts.non_transferable_user_status;
-  status.is_authorized = false;
-  status.is_minted = false;
+    msg!(
+        "RNSBurnID:_rnsId:{};_wallet:{};_tokenId:{}",
+        rns_id,
+        ctx.accounts.authority.key(),
+        ctx.accounts.non_transferable_nft_mint.key()
+    );
 
+    emit!(BurnEvent {
+        rns_id: rns_id.clone(),
+        wallet: ctx.accounts.authority.key(),
+        token_id: ctx.accounts.non_transferable_nft_mint.key().to_string()
+    });
 
-  msg!(
-    "RNSBurnID:_rnsId:{};_wallet:{};_tokenId:{}",
-    rns_id.clone(),
-    ctx.accounts.authority.to_account_info().key(),
-    ctx.accounts.non_transferable_nft_mint.key().to_string()
-  );
-
-  emit!(BurnEvent {
-    rns_id: rns_id.clone(),
-    wallet: ctx.accounts.authority.to_account_info().key(),
-    token_id: rns_id.clone()
-  });
-
-  Ok(())
+    Ok(())
 }
 
 #[event]

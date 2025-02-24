@@ -7,7 +7,7 @@ pub mod utils;
 
 use instructions::*;
 use state::*;
-declare_id!("5eqvLvpg16iTZ1q3V8BtjmcLWSiBuv4tZXXvvfqKYHA7");
+declare_id!("3WaA2C9VRHczjqcdVgWw8Ug2VfoCVbCzEp9bwPPG6Qj6");
 
 #[program]
 pub mod rnsdid_core {
